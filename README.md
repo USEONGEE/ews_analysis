@@ -1,2 +1,0 @@
-# EWS
-EWS-modeling-python
