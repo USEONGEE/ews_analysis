@@ -1,0 +1,70 @@
+ <style> /* Import Roboto from Google Fonts */ @import url(¡®https://fonts.googleapis.com/css?family=Roboto&display=swap¡¯);
+
+    /* Set the font family and size for the whole table */ table { font-family: Roboto; font-size: 12px; }
+
+    /* Set the background color and text alignment for the header cells */ th { background-color: orange; font-size: 14px; text-align: center; }
+
+    /* Set the color and font style for the data cells */ td { color: blue; font-style: italic; text-align: left; }
+
+    /* Set the background color for every odd row */ tr:nth-child(odd) { background-color: lightyellow; }
+
+    /* Set the background color for every even row */ tr:nth-child(even) { background-color: lightgrey; } </style> <table class="dataframe table table-striped table-bordered table-hover">
+  <thead>
+    <tr style="text-align: center;">
+      <th style="background-color: lightgreen"></th>
+      <th style="background-color: lightgreen">Data Type</th>
+      <th style="background-color: lightgreen">Missing Values%</th>
+      <th style="background-color: lightgreen">Unique Values%</th>
+      <th style="background-color: lightgreen">Minimum Value</th>
+      <th style="background-color: lightgreen">Maximum Value</th>
+      <th style="background-color: lightgreen">DQ Issue</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th style="background-color: lightgreen">sepalLength</th>
+      <td style="color: blue">float64</td>
+      <td style="color: blue">0.0</td>
+      <td style="color: blue">NA</td>
+      <td style="color: blue">4.3</td>
+      <td style="color: blue">7.9</td>
+      <td style="color: blue">No issue</td>
+    </tr>
+    <tr>
+      <th style="background-color: lightgreen">sepalWidth</th>
+      <td style="color: blue">float64</td>
+      <td style="color: blue">0.0</td>
+      <td style="color: blue">NA</td>
+      <td style="color: blue">2.0</td>
+      <td style="color: blue">4.4</td>
+      <td style="color: blue">Column has 4 outliers greater than upper bound (4.05) or lower than lower bound(2.05). Cap them or remove them.</td>
+    </tr>
+    <tr>
+      <th style="background-color: lightgreen">petalLength</th>
+      <td style="color: blue">int32</td>
+      <td style="color: blue">0.0</td>
+      <td style="color: blue">1</td>
+      <td style="color: blue">0.0</td>
+      <td style="color: blue">1.0</td>
+      <td style="color: blue">No issue</td>
+    </tr>
+    <tr>
+      <th style="background-color: lightgreen">petalWidth</th>
+      <td style="color: blue">float64</td>
+      <td style="color: blue">0.0</td>
+      <td style="color: blue">NA</td>
+      <td style="color: blue">0.1</td>
+      <td style="color: blue">2.5</td>
+      <td style="color: blue">Column has a high correlation with ['sepalLength']. Consider dropping one of them.</td>
+    </tr>
+    <tr>
+      <th style="background-color: lightgreen">variety</th>
+      <td style="color: blue">object</td>
+      <td style="color: blue">0.0</td>
+      <td style="color: blue">2</td>
+      <td style="color: blue"></td>
+      <td style="color: blue"></td>
+      <td style="color: blue">No issue</td>
+    </tr>
+  </tbody>
+</table> 
