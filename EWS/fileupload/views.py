@@ -14,13 +14,11 @@ import requests
 from threading import Thread
 from .model.main import *
 import redis
+import pandas as pd
+from datetime import datetime
 
-# Redis 서버에 연결
-
-
-# Create your views here.
+# 분석 구 버전
 def analysis(request):
-  
   # Validation
   if request.method.lower() != "post" :
     return HttpResponse("POST 요청만 가능합니다.", status=405)
@@ -60,8 +58,8 @@ def analysis(request):
   
   return JsonResponse(result, status=200)
 
+# 분석 최신 버전
 def analysisV2(request):
-  
   # Validation
   if request.method.lower() != "post" :
     return HttpResponse("POST 요청만 가능합니다.", status=405)
@@ -91,13 +89,113 @@ def analysisV2(request):
     df = pd.read_excel(file, usecols=columns)
 
   oca = OCA(df, metadata['targetColumns'][0]['columnName'])
-  thread = Thread(target=process_and_callback, args=(oca, metadata['callbackUrl'], metadata['redisKey']))
+  thread = Thread(target=analysisV2_callback, args=(oca, metadata['callbackUrl'], metadata['redisKey']))
   thread.start()
 
   # 클라이언트에게 즉시 응답 반환
   return JsonResponse({"message": "분석을 시작했습니다."}, status=202)
 
-def process_and_callback(oca, callback_url, redis_key):
+# df의 column별 타입 체크
+def column_type_check(request) :
+
+  if request.method.lower() != "post" :
+    return HttpResponse("POST 요청만 가능합니다.", status=405)
+  if 'file' not in request.FILES:
+    print("파일이 업로드되지 않았습니다.")
+    return HttpResponse("파일이 업로드되지 않았습니다.", status=400) 
+  
+  file = request.FILES['file']
+  file_name = file.name
+  extension = file_name.split('.')[-1].lower()
+  
+
+  if extension == 'csv':
+    df = pd.read_csv(file)
+  elif extension in ['xls', 'xlsx']:
+    df = pd.read_excel(file)
+  
+  callback_url = request.POST['callbackUrl']
+  redis_key = request.POST['redisKey']
+
+  print(callback_url)
+  print(redis_key)
+
+  thread = Thread(target=column_type_check_callback, args=(df, callback_url, redis_key))
+  thread.start()
+  
+  return JsonResponse({"message": "Type Check를 시작했습니다."}, status=202) 
+  
+
+  
+def detect_column_types(df):
+    dtos = []  # 'dtos' 리스트 초기화
+    
+    for column in df.columns:
+        unique_values = df[column].dropna().unique()
+        
+        # 모든 값에 대해 데이터 타입 추론
+        inferred_types = {infer_data_type(value) for value in unique_values}
+        
+        # 최종 데이터 타입 결정
+        if "datetime" in inferred_types:
+            final_type = "datetime"
+        elif "float" in inferred_types:
+            final_type = "float"
+        elif "int" in inferred_types:
+            final_type = "int"
+        else:
+            final_type = "str"
+        
+        # 각 열에 대한 정보를 'dtos' 리스트에 딕셔너리 형태로 추가
+        dtos.append({
+            "columnName": column,
+            "dataType": final_type
+        })
+    return dtos# 'dtos'를 포함한 딕셔너리 반환
+
+def infer_data_type(value):
+    try:
+        int_value = int(value)
+        float_value = float(value)
+        if float_value - int_value == 0:
+            return 'int'
+        else:
+            return 'float'
+    except ValueError:
+        try:
+            datetime.strptime(str(value), '%Y%m%d')
+            return 'datetime'
+        except ValueError:
+            return 'str'
+
+def column_type_check_callback(df, callback_url, redis_key) :
+  print(callback_url)
+  r = redis.Redis(host='localhost', port=6379, db=0)
+  try :
+    
+    redis_result = r.hgetall(redis_key)
+    token = redis_result[b'token'].decode('utf-8')
+    if not token:
+      print("Token not found")
+      return
+    result = detect_column_types(df)
+    # oca.run() 실행 및 결과 처리
+    print(result)
+    payload = {
+    "token": token,
+    "dtos": result
+    }
+    # Convert the payload to a JSON string
+    
+    # 결과를 callback URL로 POST 요청
+    response = requests.post(callback_url, json=payload)
+    print(f"Callback POST status: {response.status_code}")
+  finally :
+    r.close()
+    r.connection_pool.disconnect()  
+   
+        
+def analysisV2_callback(oca, callback_url, redis_key):
   r = redis.Redis(host='localhost', port=6379, db=0)
   try :
     redis_result = r.hgetall(redis_key)
