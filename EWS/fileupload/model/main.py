@@ -1,6 +1,7 @@
 from .syndata import *
 from .models import *
 from .visualize import *
+import time
 
 class OCA:
     '''
@@ -44,7 +45,7 @@ class OCA:
         return None
 
     def setup(self):
-  
+        
         reg_model, reg_avail_model = auto_ml_reg(self.df, self.target)
         # reg_models = ml_create_model(reg_model, reg_avail_model)
         reg_dashboard = make_reg_dashboards(reg_model, reg_avail_model)

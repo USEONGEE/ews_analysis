@@ -15,7 +15,8 @@ from explainerdashboard import ExplainerDashboard, RegressionExplainer, Classifi
 import zipfile
 import os
 import shutil
-
+import traceback
+import time
 
 
 # def lstm_train_test(df1, df2, bank_lists, target, timestep=1):
@@ -143,13 +144,13 @@ def make_reg_dashboards(base, models):
     
     X_test_df = base.X_test_transformed.copy()
     y_test = base.y_test_transformed
+    # TODO excel data에 .이 들어가면 오류가 발생함. 이를 대체해주는 코드가 필요함.
     X_test_df.columns = [col.replace(".", "__").replace("{", "__").replace("}", "__") for col in X_test_df.columns]
     
     list_models = ml_create_model(base, models)
     explain_models = []
 
     for model, model_name in zip(list_models,models):
-        print(model)
         try:
             explainer = RegressionExplainer(model, X_test_df, y_test)
         except :
@@ -253,7 +254,8 @@ def make_cls_dashboards(base, models):
         try:
             explainer = ClassifierExplainer(model, X_test_df, y_test)
         except :
-            pass
+            traceback.print_exc()
+            
         
         try:
             dashboard = ExplainerDashboard(explainer, title=f'{classificiaton_models[model_name]}', description=cls_description[model_name])

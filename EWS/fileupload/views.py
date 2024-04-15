@@ -6,7 +6,6 @@ from django.core.exceptions import BadRequest
 from django.core import serializers
 from django.shortcuts import render, get_object_or_404
 import pandas as pd
-from .techList import *
 from pycaret.regression import *
 import json
 from time import sleep
@@ -16,12 +15,13 @@ from .model.main import *
 import redis
 import pandas as pd
 from datetime import datetime
+# api_view 임포트
+from rest_framework.decorators import api_view as api_viuw
 
 # 분석 구 버전
+@api_viuw(['POST'])
 def analysis(request):
   # Validation
-  if request.method.lower() != "post" :
-    return HttpResponse("POST 요청만 가능합니다.", status=405)
   if 'file' not in request.FILES:
     print("파일이 업로드되지 않았습니다.")
     return HttpResponse("파일이 업로드되지 않았습니다.", status=400)
@@ -59,6 +59,7 @@ def analysis(request):
   return JsonResponse(result, status=200)
 
 # 분석 최신 버전
+@api_viuw(['POST'])
 def analysisV2(request):
   # Validation
   if request.method.lower() != "post" :
@@ -96,6 +97,7 @@ def analysisV2(request):
   return JsonResponse({"message": "분석을 시작했습니다."}, status=202)
 
 # df의 column별 타입 체크
+@api_viuw(['POST'])
 def column_type_check(request) :
 
   if request.method.lower() != "post" :
@@ -117,15 +119,12 @@ def column_type_check(request) :
   callback_url = request.POST['callbackUrl']
   redis_key = request.POST['redisKey']
 
-  print(callback_url)
-  print(redis_key)
 
   thread = Thread(target=column_type_check_callback, args=(df, callback_url, redis_key))
   thread.start()
   
   return JsonResponse({"message": "Type Check를 시작했습니다."}, status=202) 
   
-
   
 def detect_column_types(df):
     dtos = []  # 'dtos' 리스트 초기화
@@ -181,6 +180,7 @@ def column_type_check_callback(df, callback_url, redis_key) :
     result = detect_column_types(df)
     # oca.run() 실행 및 결과 처리
     print(result)
+
     payload = {
     "token": token,
     "dtos": result
@@ -209,6 +209,7 @@ def analysisV2_callback(oca, callback_url, redis_key):
 
     # oca.run() 실행 및 결과 처리
     analysis_result = oca.run()  # oca.run()이 동기적으로 실행된다고 가정
+    print(analysis_result.keys())
     payload = {
     "token": token,
     "body": analysis_result
@@ -216,8 +217,10 @@ def analysisV2_callback(oca, callback_url, redis_key):
     # Convert the payload to a JSON string
     
     # 결과를 callback URL로 POST 요청
+    print(callback_url)
     response = requests.post(callback_url, json=payload)
     print(f"Callback POST status: {response.status_code}")
   finally :
     r.close()
     r.connection_pool.disconnect()  
+
